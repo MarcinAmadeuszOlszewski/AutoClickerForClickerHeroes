@@ -1,0 +1,307 @@
+import java.awt.AWTEvent;
+import java.awt.AWTException;
+import java.awt.MouseInfo;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+
+public class Grafika extends JFrame{
+	class RobotLisener implements ActionListener
+	{
+
+		@Override
+		public void actionPerformed(ActionEvent arg0)
+		{
+			start.setEnabled(false);
+			ustawianie1.setEnabled(false);
+			ustawianie2.setEnabled(false);
+//			ustawLiczniki();
+			koniec = false;
+			int tmp;
+//			stop.setSelected(false);
+			xp = Integer.parseInt(czysc(xPole1.getText()));
+			yp = Integer.parseInt(czysc(yPole1.getText()));
+			xk = Integer.parseInt(czysc(xPole2.getText()));
+			yk = Integer.parseInt(czysc(yPole2.getText()));
+
+			if (xp > xk)
+			{
+				tmp = xk;
+				xk = xp;
+				xp = tmp;
+			}
+			if (yp > yk)
+			{
+				tmp = yk;
+				yk = yp;
+				yp = tmp;
+			}
+
+			ilosc = Integer.parseInt(czysc(iloscPole.getText()));
+
+			robot.mouseMove(xp + ((xk - xp) / 2), yp + ((yk - yp) / 2));
+
+			new Thread()
+			{
+
+				@Override
+				public void run()
+				{
+//					long start= System.currentTimeMillis();
+					for (int i = ilosc; i >= 0; i--)
+					{
+						int tmpx = (int) MouseInfo.getPointerInfo().getLocation().getX();
+						int tmpy = (int) MouseInfo.getPointerInfo().getLocation().getY();
+						if (tmpx > xp && tmpx < xk && tmpy > yp && tmpy < yk)
+						{
+
+							robot.mousePress(InputEvent.BUTTON1_MASK);
+							robot.mouseRelease(InputEvent.BUTTON1_MASK);
+							robot.delay(OP);
+							licznik.setText("" + i);
+
+							czasulicznik.setText(czasulicznik(i));
+							if (koniec)
+							{
+//								Thread.currentThread().interrupt();
+								break;
+//								i=-1;
+//								ustawLiczniki();
+							}
+
+							if (skill1.isSelected() && (ilosc - i) % 3_000 == 0)
+							{
+								robot.keyPress('1');
+								robot.keyRelease('1');
+								robot.keyPress('2');
+								robot.keyRelease('2');
+								robot.keyPress('3');
+								robot.keyRelease('3');
+								robot.keyPress('4');
+								robot.keyRelease('4');
+								robot.keyPress('5');
+								robot.keyRelease('5');
+								robot.keyPress('7');
+								robot.keyRelease('7');
+								// robot.keyPress('8');
+								// robot.keyRelease('8');
+								// robot.keyPress('6');
+								// robot.keyRelease('6');
+								// robot.keyPress('9');
+								// robot.keyRelease('9');
+								// simple pattern: 1-2-3-4-5-7-8-6-9(wait
+								// 15)8-9-1-2-3-4-5-7(wait 15)(repeat)
+							}
+						}
+						else
+						{
+							i++;
+							continue;
+						}
+					}
+					ustawianie1.setEnabled(true);
+					ustawianie2.setEnabled(true);
+					start.setEnabled(true);
+//					System.out.println(System.currentTimeMillis()-start);
+				}
+			}.start();
+		
+			
+		}
+
+	}
+	class UstawienieKursoraListener implements AWTEventListener
+	{
+
+		@Override
+		public void eventDispatched(AWTEvent event)
+		{
+			if (ustawianie1.isSelected())
+			{
+				xPole1.setText((int) MouseInfo.getPointerInfo().getLocation().getX() + "");
+				yPole1.setText((int) MouseInfo.getPointerInfo().getLocation().getY() + "");
+				ustawianie1.setSelected(false);
+			}
+
+			if (ustawianie2.isSelected())
+			{
+				xPole2.setText((int) MouseInfo.getPointerInfo().getLocation().getX() + "");
+				yPole2.setText((int) MouseInfo.getPointerInfo().getLocation().getY() + "");
+				ustawianie2.setSelected(false);
+			}
+
+		}
+
+	}
+	private Robot robot;
+	private int xp, yp, xk, yk, ilosc;
+	public static volatile boolean koniec = false;
+	private JButton start, stop;
+
+	private JCheckBox skill1, ustawianie1, ustawianie2;
+
+	private volatile JTextField xPole1, yPole1, xPole2, yPole2, iloscPole;
+
+	private static volatile JLabel licznik, czasulicznik;
+
+	public static final int OP = 20;
+
+	public Grafika()
+	{
+		setSize(175, 158);
+		setLocation(1100, 10);
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
+		setAlwaysOnTop(true);
+		setLayout(null);
+		Toolkit.getDefaultToolkit().addAWTEventListener(new UstawienieKursoraListener(), AWTEvent.FOCUS_EVENT_MASK);
+		// Toolkit.getDefaultToolkit().addAWTEventListener(new
+		// UstawienieKursoraListener(), AWTEvent.MOUSE_EVENT_MASK |
+		// AWTEvent.FOCUS_EVENT_MASK);
+
+		try
+		{
+			robot = new Robot();
+		}
+		catch (AWTException e)
+		{
+			e.printStackTrace();
+		}
+
+		start = new JButton("start");
+		start.setMnemonic('j');
+		start.addActionListener(new RobotLisener());
+		start.setBounds(0, 0, 160, 20);
+
+		ustawianie1 = new JCheckBox("poczatek");
+		ustawianie1.setBounds(0, 60, 80, 20);
+		ustawianie1.setToolTipText("poczatek obszaru klikania");
+		xPole1 = new JTextField("800", 4);
+		xPole1.setHorizontalAlignment(SwingConstants.RIGHT);
+		xPole1.setBounds(80, 60, 40, 20);
+		xPole1.setToolTipText("wspolrzedna x");
+		yPole1 = new JTextField("400", 4);
+		yPole1.setHorizontalAlignment(SwingConstants.RIGHT);
+		yPole1.setBounds(120, 60, 40, 20);
+		yPole1.setToolTipText("wspolrzedna y");
+
+		ustawianie2 = new JCheckBox("koniec");
+		ustawianie2.setBounds(0, 80, 80, 20);
+		ustawianie2.setToolTipText("koniec obszaru klikania");
+		xPole2 = new JTextField("840", 4);
+		xPole2.setHorizontalAlignment(SwingConstants.RIGHT);
+		xPole2.setBounds(80, 80, 40, 20);
+		xPole2.setToolTipText("wspolrzedna x");
+		yPole2 = new JTextField("440", 4);
+		yPole2.setHorizontalAlignment(SwingConstants.RIGHT);
+		yPole2.setBounds(120, 80, 40, 20);
+		yPole2.setToolTipText("wspolrzedna y");
+
+		iloscPole = new JTextField("100000", 10);
+		
+		iloscPole.setHorizontalAlignment(SwingConstants.CENTER);
+		iloscPole.setBounds(0, 20, 80, 20);
+		iloscPole.setToolTipText("ilosc klikniec");
+		iloscPole.addKeyListener(new KeyListener()
+		{
+			
+			@Override
+			public void keyTyped(KeyEvent e)
+			{
+			}
+			
+			@Override
+			public void keyReleased(KeyEvent e)
+			{
+					ustawLiczniki();
+			}
+			
+			@Override
+			public void keyPressed(KeyEvent e)
+			{
+			}
+		});
+		
+		licznik = new JLabel(iloscPole.getText(), SwingConstants.CENTER);
+		licznik.setBounds(0, 40, 80, 20);
+		licznik.setToolTipText("licznik klikniec");
+
+		czasulicznik = new JLabel(czasulicznik(iloscPole.getText()), SwingConstants.CENTER);
+		czasulicznik.setBounds(80, 40, 80, 20);
+		czasulicznik.setToolTipText("czas do konca klikania");
+
+		stop = new JButton("stop");
+		stop.setMnemonic('m');
+		stop.setBounds(0, 100, 160, 20);
+		stop.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				koniec=true;
+//				start.setEnabled(true);
+//				ustawLiczniki();
+			}
+		});
+		skill1 = new JCheckBox("skill (i)");
+		skill1.setMnemonic('i');
+		skill1.setBounds(80, 20, 80, 20);
+		skill1.setToolTipText("use skills 1,2,3,4,5,7");
+
+		add(start);
+		add(ustawianie1);
+		add(xPole1);
+		add(yPole1);
+		add(ustawianie2);
+		add(xPole2);
+		add(yPole2);
+		add(iloscPole);
+		add(licznik);
+		add(czasulicznik);
+		add(stop);
+		add(skill1);
+
+		setVisible(true);
+	}
+
+	public String czasulicznik(String ss)
+	{
+		int tmp = Integer.parseInt(czysc(ss));
+		return czasulicznik(tmp);
+	}
+	public String czasulicznik(int ss)
+	{
+		int tmp = (int) (ss * OP*1.544);
+		return String.format("%02d:%02d:%02d", tmp / 3_600_000, (tmp % 3_600_000) / 60_000, (tmp % 60_000) / 1_000);
+	}
+	public String czysc(String ss)
+	{
+		String tmp = "";
+		for(int i =0, e=ss.length(); i<e; i++ ){
+			char xx=ss.charAt(i);
+			if(xx=='1' || xx=='2' || xx=='3' || xx=='4' || xx=='5' || xx=='6' || xx=='7' || xx=='8' || xx=='9'|| xx=='0')
+			{tmp += xx;}
+		}
+		
+		if(tmp.length()==0)
+			return "0";
+		else
+			return tmp;
+	}
+	public void ustawLiczniki(){
+		licznik.setText(iloscPole.getText());
+		czasulicznik.setText(czasulicznik(iloscPole.getText()));
+	}
+
+}
